@@ -17,14 +17,3 @@ instance Fucktoid C where
   put Memchr = [Loop [Move 1]]
   get = [(Memchr, xs) | (Loop [Move 1]:xs) <- id]
 
-
-tst :: POpt BrainFuck
-tst = do
-  (Memchr, xs) <- get
-  Just (Memchr, ys) <- pure $ runOpt get xs
-  return $ put Memchr ++ ys
-
-tst' :: POpt C
-tst' = [ Memchr:xs | (Memchr:Memchr:xs) <- id ]
-
-

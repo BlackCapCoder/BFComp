@@ -93,7 +93,7 @@ gets' = [ (b, as) | Just (b, bfs) <- runOpt gets . puts <$> yes
 puts :: Fucktoid a => Program a -> Program BrainFuck
 puts = (>>= put)
 
--- Languag agnostic puts
+-- Language agnostic puts
 puts' :: (Fucktoid a, Fucktoid b) => Program a -> Maybe (Program b)
 puts' a = [ b | (b, []) <- runOpt gets' a ]
 

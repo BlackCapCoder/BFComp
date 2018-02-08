@@ -8,19 +8,22 @@ import Optimizations.Factor    as F
 main :: IO ()
 main = do
   putStrLn ""
-  print lorem
+  print $ showProg <$> lorem
 
 abba :: BFProg
 abba = parse "+++++ +[>+++++ +++++ +<-]>-.+..-."
 
 test :: Program BrainFuck
-test = parse " +++++ > +++++ [-] < -- > + "
-
-
-optimize :: Opt BFProg BFProg
-optimize = oneOf [ joinAdds', joinMoves' ]
-        .> jump' (greedy $ oneOf [joinGroups, F.clearCell])
-
+test = parse " +++++ > +++++ [-] < -- > + [>] "
 
 lorem :: Maybe BFProg
-lorem = runOpt (jump' joinAdds') test
+lorem = runOpt Main.optimize test
+
+
+-- Single pass optimizer
+optimize :: Opt BFProg BFProg
+optimize = yes
+        .> B.optimize
+        .> jump (greedy $ oneOf [joinGroups, unsafeClearCell])
+        .> inLoop (jump $ greedy joinGroups)
+

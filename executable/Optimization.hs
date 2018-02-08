@@ -3,8 +3,8 @@ module Optimization where
 import Prelude hiding ((.), id)
 import Control.Applicative
 import Control.Monad
-import qualified Control.Monad.Fail as Fail
 import Control.Category
+import qualified Control.Monad.Fail as Fail
 
 
 newtype Opt a b = Opt { runOpt :: a -> Maybe b }
@@ -67,3 +67,9 @@ greedy o@(Opt f) = Opt $ \x -> f x >>= runOpt (try $ greedy o)
 -- Optional optimization appliance
 (.>) :: Opt a b -> Opt b b -> Opt a b
 a .> b = a >>> try b
+
+
+{-# RULES
+"doubleGreedy" forall x. greedy (greedy x) = greedy x
+"doubleTry" forall x. try (try x) = try x
+  #-}

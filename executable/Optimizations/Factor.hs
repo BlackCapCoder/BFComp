@@ -35,8 +35,9 @@ instance Fucktoid Factor where
     = xs ++ if i==0 then [] else [ Move (-i) ]
 
 
-clearCell :: POpt Factor
-clearCell = [ Group p (M.delete 0 m) : xs | (Group p m:Clear:xs) <- id ]
+-- WARNING: This may only be used at the beginning of the program
+unsafeClearCell :: POpt Factor
+unsafeClearCell = [ Group p (M.delete 0 m) : xs | (Group p m:Clear:xs) <- id ]
 
 joinGroups :: POpt Factor
 joinGroups = do

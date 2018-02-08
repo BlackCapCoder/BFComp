@@ -15,8 +15,8 @@ getBalance = sum . map balance <$> id
 circular :: Opt BFProg ()
 circular = guard . (==0) =<< getBalance
 
-withLoop :: POpt BrainFuck -> POpt BrainFuck
-withLoop o = Opt $ \x -> do
+inLoop :: POpt BrainFuck -> POpt BrainFuck
+inLoop o = Opt $ \x -> do
   (Loop b:xs) <- pure x
   (:xs) . Loop <$> runOpt o b
 
@@ -42,3 +42,11 @@ nopLoop = [ a : xs | (a@(Loop _):Loop _:xs) <- id ]
 
 clearCell :: POpt BrainFuck
 clearCell = [ Loop [Add (-1)] : xs | (Loop [Add n]:xs) <- id, odd n, n /= -1 ]
+
+
+optimize = greedy $ oneOf
+  [ joinAdds', joinMoves'
+  , inpOverwrite
+  , greedy nopLoop
+  , inLoop optimize
+  ]
