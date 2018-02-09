@@ -43,6 +43,12 @@ nopLoop = [ a : xs | (a@(Loop _):Loop _:xs) <- id ]
 clearCell :: POpt BrainFuck
 clearCell = [ Loop [Add (-1)] : xs | (Loop [Add n]:xs) <- id, odd n, n /= -1 ]
 
+-- Without IO a program is just generating heat
+-- We can pop pure OPs from the end of the program
+-- WARNING: May not be used inside loops
+unsafePopPure :: POpt BrainFuck
+unsafePopPure = [ [] | xs <- id, all isPure xs ]
+
 
 optimize = greedy $ oneOf
   [ joinAdds', joinMoves'

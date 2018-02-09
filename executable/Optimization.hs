@@ -1,3 +1,4 @@
+{-# LANGUAGE MonadComprehensions #-}
 module Optimization where
 
 import Prelude hiding ((.), id)
@@ -5,6 +6,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Category
 import qualified Control.Monad.Fail as Fail
+import Data.Function (fix)
 
 
 newtype Opt a b = Opt { runOpt :: a -> Maybe b }
@@ -20,6 +22,11 @@ instance Alternative (Opt a) where
   empty = no
   a <|> b = Opt $ \x -> runOpt a x <|> runOpt b x
 
+instance Category Opt where
+  id = yes
+  (Opt f) . (Opt g) = Opt $ g >=> f
+
+
 instance MonadPlus (Opt a) where
   mzero = empty
   mplus = (<|>)
@@ -33,19 +40,14 @@ instance Functor (Opt a) where
 
 instance Applicative (Opt a) where
   pure = Opt . const . Just
-  (Opt f) <*> (Opt o) = Opt $ \x -> f x <*> o x
+  (Opt f) <*> (Opt o) = Opt $ liftA2 ap f o
 
 instance Monad (Opt a) where
-  (Opt o) >>= f = Opt $ \x ->
-    o x >>= \a -> f a `runOpt` x
+  (Opt o) >>= f = Opt $ \x -> o x >>= flip runOpt x . f
   fail = Fail.fail
 
 instance Fail.MonadFail (Opt a) where
   fail _ = mzero
-
-instance Category Opt where
-  (Opt f) . (Opt g) = Opt $ g >=> f
-  id = yes
 
 
 -- First of many, otherwise none
@@ -57,16 +59,16 @@ allOf :: Traversable t => t (Opt a b) -> Opt a ()
 allOf = sequence_
 
 -- An optimization that cannot fail
-try :: Opt a a -> Opt a a
+try :: (Category f, Alternative (f a)) => f a a -> f a a
 try = (<|> id)
 
--- Repeat as many times as possible, but at least once
-greedy :: Opt a a -> Opt a a
-greedy o@(Opt f) = Opt $ \x -> f x >>= runOpt (try $ greedy o)
-
 -- Optional optimization appliance
-(.>) :: Opt a b -> Opt b b -> Opt a b
+(.>) :: (Category f, Alternative (f b)) => f a b -> f b b -> f a b
 a .> b = a >>> try b
+
+-- Repeat as many times as possible, but at least once
+greedy :: (Category f, Alternative (f a)) => f a a -> f a a
+greedy = fix $ ap (.>)
 
 
 {-# RULES

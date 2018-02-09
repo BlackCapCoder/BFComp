@@ -123,3 +123,10 @@ balance = \case
   Move n -> n
   Loop b -> sum $ balance <$> b
   _      -> 0
+
+isPure :: Op BrainFuck -> Bool
+isPure = \case
+  In     -> False
+  Out    -> False
+  Loop b -> all isPure b
+  _      -> True
