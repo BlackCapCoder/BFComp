@@ -47,7 +47,7 @@ clearCell = [ Loop [Add (-1)] : xs | (Loop [Add n]:xs) <- id, odd n, n /= -1 ]
 -- We can pop pure OPs from the end of the program
 -- WARNING: May not be used inside loops
 unsafePopPure :: POpt BrainFuck
-unsafePopPure = [ [] | xs <- id, all isPure xs ]
+unsafePopPure = [ [] | xs <- id, not $ null xs, all isPure xs ]
 
 
 optimize = greedy $ oneOf

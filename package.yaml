@@ -28,6 +28,7 @@ executables:
     - ListZipper
     - mtl
     - containers
+    - transformers
     ghc-options:
     - -rtsopts
     - -threaded
