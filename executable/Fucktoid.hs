@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies, FlexibleInstances, LambdaCase, MonadComprehensions #-}
 module Fucktoid where
 
+import Binary
 import Optimization
 
 import Control.Lens

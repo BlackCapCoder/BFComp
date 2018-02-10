@@ -1,16 +1,45 @@
-{-# LANGUAGE MonadComprehensions, LambdaCase #-}
+{-# LANGUAGE MonadComprehensions, LambdaCase, TypeSynonymInstances, MultiParamTypeClasses #-}
 module Machine where
 
-import Optimization hiding (get, gets)
+import Optimization hiding (get, gets, yes, no, try, (.>))
+import Binary
 
 import Control.Monad.Trans.Maybe
 import Control.Monad.State
 import Data.List.Zipper as Z
 import Control.Applicative
 
-type Tape      = Zipper
-type Machine a = MaybeT (State (Tape a))
+type Tape = Zipper
+newtype Machine a b = Machine { unMachine :: MaybeT (State (Tape a)) b }
 
+
+instance Functor (Machine a) where
+  fmap f (Machine x) = Machine $ f <$> x
+
+instance Applicative (Machine a) where
+  pure = Machine . pure
+  (Machine f) <*> (Machine x) = Machine $ f <*> x
+
+instance Monad (Machine a) where
+  (Machine a) >>= f = Machine $ a >>= unMachine <$> f
+
+instance MonadPlus (Machine a) where
+  mzero = Machine mzero
+  (Machine a) `mplus` (Machine b) = Machine $ a `mplus` b
+
+instance Alternative (Machine a) where
+  empty = mzero
+  (Machine a) <|> (Machine b) = Machine $ a <|> b
+
+instance MonadState (Tape a) (Machine a) where
+  get   = Machine $ get
+  put   = Machine . put
+  state = Machine . state
+
+instance Binary Machine where
+  no = mzero
+  yes' = pure ()
+  a ~.> b = a >> b
 
 
 -- Somehow the list zipper doesn't ship with these
@@ -19,8 +48,8 @@ zRight = \case Zip l r -> r
 
 -- Wrap the zipper in our monad
 start, end, pop, popr, left, right :: Machine a ()
-start = modify Z.start -- == mgreedy left
-end   = modify Z.end -- == mgreedy right
+start = modify Z.start -- == greedy left
+end   = modify Z.end   -- == greedy right
 pop   = modify Z.pop
 popr  = Machine.right >> modify Z.pop
 
@@ -36,7 +65,7 @@ right = do
 
 -- Gets the cursor
 cursor :: Machine a a
-cursor = MaybeT $ gets Z.safeCursor
+cursor = Machine . MaybeT $ gets Z.safeCursor
 
 
 
@@ -60,25 +89,10 @@ optr' o = do
   Just x <- optr o
   modify $ \(Zip l r) -> Zip l x
 
--- These might come in handy
-(<<.) = optl'
-(.>>) = optr'
-
 
 
 runMachine :: Machine a b -> Tape a -> (Maybe b, Tape a)
-runMachine = runState . runMaybeT
+runMachine = runState . runMaybeT . unMachine
 
 runMachine' :: Machine a b -> [a] -> [a]
 runMachine' m = toList . snd . runMachine m . fromList
-
--- Machines can be greedy too!
-mgreedy :: Machine a () -> Machine a ()
-mgreedy m = do
-  (Just (), t) <- runMachine m <$> get
-  let (_, tb) = runMachine (mgreedy m) t
-  modify $ const tb
-
-mtry :: Machine a () -> Machine a ()
-mtry = (<|> pure ())
-

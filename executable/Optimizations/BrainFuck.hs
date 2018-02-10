@@ -1,6 +1,7 @@
 {-# LANGUAGE MonadComprehensions #-}
 module Optimizations.BrainFuck where
 
+import Binary
 import Fucktoid
 import Optimization
 

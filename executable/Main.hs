@@ -1,4 +1,6 @@
 {-# LANGUAGE MonadComprehensions, LambdaCase #-}
+
+import Binary
 import Fucktoid
 import Optimization
 import Optimizations.BrainFuck as B
@@ -13,7 +15,7 @@ main :: IO ()
 main = do
   putStrLn ""
   print $ showProg <$> lorem
-  putStrLn $ showProg $ ipsum
+  putStrLn $ showProg ipsum
 
 abba :: BFProg
 abba = parse "+++++ +[>+++++ +++++ +<-]>-.+..-."
@@ -31,7 +33,7 @@ test = parse " +++++ > +++++ [-] < -- > +  Simple optimization \
 -- Pop pure ops from to right
 popPure :: Machine (Op BrainFuck) ()
 popPure
-  = mgreedy $ do
+  = greedy' $ do
       left
       guard . isPure =<< cursor
       popr
@@ -46,8 +48,8 @@ optimize = yes
 -- Optimization machine
 optimizer :: Machine (Op BrainFuck) ()
 optimizer = do
-  mtry $ end >> popPure >> start
-  mgreedy $ do
+  try' $ end >> popPure >> start
+  greedy' $ do
     optr' Main.optimize
     right
 
