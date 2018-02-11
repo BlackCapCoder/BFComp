@@ -50,7 +50,7 @@ optimizer :: Machine (Op BrainFuck) ()
 optimizer = do
   try' $ end >> popPure >> start
   try' . optr' $ B.optimize
-              .> jump (greedy $ oneOf [joinGroups, unsafeClearCell, unsafeScan])
+              .> jump (greedy $ oneOf [joinGroups, unsafeClearCell, unsafeScan'])
   greedy' $
     optr' (B.optimize .> inLoop (jump $ greedy joinGroups))
       <|> right
