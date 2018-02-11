@@ -18,11 +18,11 @@ main = do
   putStrLn $ showProg ipsum
 
 abba :: BFProg
-abba = parse "+++++ +[>+++++ +++++ +<-]>-.+..-."
+abba = parse "+++++ +[>+++++ +++++ +<-]>[<]>-.+..-."
 
 test :: Program BrainFuck
 test = parse " +++++ > +++++ [-] < -- > +  Simple optimization \
-             \ [>]                         Non trivial loop \
+             \ [<]                         Non trivial loop \
              \ +++++ > +++++ [-] < -- > +  More simple stuff \
              \ .                           IO to prevents us from NOPing \
              \                             the entire program \
@@ -42,20 +42,22 @@ popPure
 optimize :: Opt BFProg BFProg
 optimize = yes
         .> B.optimize
-        .> jump (greedy $ oneOf [joinGroups, unsafeClearCell])
+        .> jump (greedy $ oneOf [joinGroups, unsafeClearCell, unsafeScan])
         .> inLoop (jump $ greedy joinGroups)
 
 -- Optimization machine
 optimizer :: Machine (Op BrainFuck) ()
 optimizer = do
   try' $ end >> popPure >> start
-  greedy' $ do
-    optr' Main.optimize
-    right
+  try' . optr' $ B.optimize
+              .> jump (greedy $ oneOf [joinGroups, unsafeClearCell, unsafeScan])
+  greedy' $
+    optr' (B.optimize .> inLoop (jump $ greedy joinGroups))
+      <|> right
 
 
 lorem :: Maybe BFProg
-lorem = runOpt Main.optimize test
+lorem = runOpt Main.optimize abba
 
 ipsum :: BFProg
-ipsum = runMachine' optimizer test
+ipsum = runMachine' optimizer abba

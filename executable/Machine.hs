@@ -1,4 +1,4 @@
-{-# LANGUAGE MonadComprehensions, LambdaCase, TypeSynonymInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE MonadComprehensions, LambdaCase, TypeSynonymInstances, MultiParamTypeClasses, GeneralizedNewtypeDeriving #-}
 module Machine where
 
 import Optimization hiding (get, gets, yes, no, try, (.>))
@@ -8,28 +8,11 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.State
 import Data.List.Zipper as Z
 import Control.Applicative
+import qualified Control.Monad.Fail as Fail
 
 type Tape = Zipper
 newtype Machine a b = Machine { unMachine :: MaybeT (State (Tape a)) b }
-
-
-instance Functor (Machine a) where
-  fmap f (Machine x) = Machine $ f <$> x
-
-instance Applicative (Machine a) where
-  pure = Machine . pure
-  (Machine f) <*> (Machine x) = Machine $ f <*> x
-
-instance Monad (Machine a) where
-  (Machine a) >>= f = Machine $ a >>= unMachine <$> f
-
-instance MonadPlus (Machine a) where
-  mzero = Machine mzero
-  (Machine a) `mplus` (Machine b) = Machine $ a `mplus` b
-
-instance Alternative (Machine a) where
-  empty = mzero
-  (Machine a) <|> (Machine b) = Machine $ a <|> b
+                    deriving (Functor, Applicative, Monad, MonadPlus, Alternative)
 
 instance MonadState (Tape a) (Machine a) where
   get   = Machine $ get

@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies, MultiParamTypeClasses #-}
 module Binary where
 
 import Control.Applicative
@@ -7,8 +6,8 @@ import Control.Monad
 
 
 class Binary f where
-  yes :: f a a
   no  :: f a b
+  yes :: f a a
   (..>) :: f a b -> f b c -> f a c
 
   yes' :: f a ()

@@ -1,53 +1,47 @@
-{-# LANGUAGE MonadComprehensions, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Optimization where
 
 import Binary
 
 import Prelude hiding ((.), id)
-import Control.Applicative
+import Control.Arrow
 import Control.Monad
+import Control.Applicative
 import Control.Category
 import qualified Control.Monad.Fail as Fail
-import Data.Function (fix)
 
 
-newtype Opt a b = Opt { runOpt :: a -> Maybe b }
+type Opt = Kleisli Maybe
 
+runOpt = runKleisli
+wrap   = Kleisli
 
-instance Alternative (Opt a) where
-  empty = no
-  a <|> b = Opt $ \x -> runOpt a x <|> runOpt b x
-
-instance Category Opt where
-  id = yes
-  (Opt f) . (Opt g) = Opt $ g >=> f
-
-
-instance MonadPlus (Opt a) where
-  mzero = empty
-  mplus = (<|>)
-
-instance Monoid (Opt a b) where
-  mempty = empty
-  mappend = (<|>)
 
 instance Functor (Opt a) where
-  fmap f (Opt o) = Opt $ fmap f . o
+  fmap f o = wrap $ fmap f . runOpt o
 
 instance Applicative (Opt a) where
-  pure = Opt . const . Just
-  (Opt f) <*> (Opt o) = Opt $ liftA2 ap f o
+  pure = wrap . const . Just
+  f <*> o = wrap $ liftA2 ap (runOpt f) (runOpt o)
 
 instance Monad (Opt a) where
-  (Opt o) >>= f = Opt $ \x -> o x >>= flip runOpt x . f
+  o >>= f = wrap $ \x -> runOpt o x >>= flip runOpt x . f
   fail = Fail.fail
 
 instance Fail.MonadFail (Opt a) where
-  fail _ = mzero
+  fail _ = no
+
+instance Alternative (Opt a) where
+  empty = wrap $ const Nothing
+  a <|> b = wrap $ \x -> runOpt a x <|> runOpt b x
+
+instance MonadPlus (Opt a) where
+  mzero = no
+  mplus = (<|>)
 
 instance Binary Opt where
-  yes = Opt Just
-  no = Opt $ const Nothing
+  yes = id
+  no  = empty
   (..>) = (>>>)
 
 

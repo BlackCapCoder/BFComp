@@ -20,14 +20,17 @@ instance Fucktoid Factor where
       , mem :: M.Map Int Int -- Memory relative to pointer
       }
     | Clear
+    | Scan Int
 
   get = oneOf
     [ [ (Group n mempty, xs) | (Move n:xs) <- id ]
     , [ (Group 0 $ M.singleton 0 n, xs) | (Add n:xs) <- id ]
     , [ (Clear, xs) | (Loop [Add n]:xs) <- id, odd n ]
+    , [ (Scan n, xs) | (Loop [Move n]:xs) <- id ]
     ]
 
-  put Clear = [Loop [Add (-1)]]
+  put Clear    = [Loop [Add (-1)]]
+  put (Scan n) = [Loop [Move n]]
   put (Group p m)
     | (i, xs) <- foldr (\(i, x) (ix, xs) ->
                          (i, xs ++ (if i==ix then id else (Move (i-ix) :)) [Add x])
@@ -35,9 +38,19 @@ instance Fucktoid Factor where
     = xs ++ if i==0 then [] else [ Move (-i) ]
 
 
--- WARNING: This may only be used at the beginning of the program
+-- WARNING: This may only be used when the memory is known
 unsafeClearCell :: POpt Factor
 unsafeClearCell = [ Group p (M.delete 0 m) : xs | (Group p m:Clear:xs) <- id ]
+
+-- WARNING: May only be used when the memory is known
+-- WARNING: May enter an infinite loop
+unsafeScan :: POpt Factor
+unsafeScan = [ Group p' (M.mapKeys (+(p'-p)) m) : xs | (Group p m:Scan n:xs) <- id
+             , (p':_) <- pure [ x | x <- iterate ((`mod`memSize).(+n)) p
+                                  , case M.lookup x m of
+                                      Nothing -> True
+                                      Just 0 -> True
+                                      _ -> False ] ]
 
 joinGroups :: POpt Factor
 joinGroups = do
@@ -50,3 +63,25 @@ joinGroups = do
 
   return $ Group pc mc : xs
 
+
+{- This is a simplified version of the scan problem.
+
+  I am standing on a pogo stick on the surface of a circle with an integer circumference C.
+  An integer distance away from me D is a piece of candy.
+  My pogo stick can only jump in one direction, and only some specific integer length L.
+  If I were to pogo forever, would I ever land on the candy, and if so, how many jumps would it take?
+
+C = number of spots on the circle
+L = distance of one hop
+D = distance from starting point to the candy
+H = number of hops (answer)
+T = number of times passed all the way around the circle
+
+H*L  how from spots the starting point on the Hth hop
+T*C  how many spots take you back to the starting point
+        on the Tth time around the circle
+
+D = H*L - T*C       you land on the candy after H hops takes you T times around the circle
+D = H*L (modulo C)  another way to express the same, without caring about specific T
+
+-}
