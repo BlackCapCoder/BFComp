@@ -7,6 +7,8 @@ import Optimizations.BrainFuck as B
 import Optimizations.Factor    as F
 import Machine
 
+import Pogo
+
 import Control.Monad
 import Control.Applicative
 
@@ -14,8 +16,9 @@ import Control.Applicative
 main :: IO ()
 main = do
   putStrLn ""
-  print $ showProg <$> lorem
-  putStrLn $ showProg ipsum
+  -- print $ showProg <$> lorem
+  -- putStrLn $ showProg ipsum
+  print $ solvePogo 12334351213333122 224 31234234
 
 abba :: BFProg
 abba = parse "+++++ +[>+++++ +++++ +<-]>[<]>-.+..-."
@@ -50,14 +53,14 @@ optimizer :: Machine (Op BrainFuck) ()
 optimizer = do
   try' $ end >> popPure >> start
   try' . optr' $ B.optimize
-              .> jump (greedy $ oneOf [joinGroups, unsafeClearCell, unsafeScan'])
+              .> jump (greedy $ oneOf [joinGroups, unsafeClearCell, unsafeScan])
   greedy' $
     optr' (B.optimize .> inLoop (jump $ greedy joinGroups))
       <|> right
 
 
 lorem :: Maybe BFProg
-lorem = runOpt Main.optimize abba
+lorem = runOpt Main.optimize test
 
 ipsum :: BFProg
-ipsum = runMachine' optimizer abba
+ipsum = runMachine' optimizer test

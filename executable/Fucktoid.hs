@@ -13,7 +13,8 @@ import Debug.Trace
 data BrainFuck
 
 memSize :: Int
-memSize = 30*1000
+-- memSize = 30*1000
+memSize = 10
 
 -- A fucktoid language is a language that can be converted to BrainFuck
 -- .. which is technically all turing complete languages because BrainFuck
