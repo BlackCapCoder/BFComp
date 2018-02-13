@@ -17,9 +17,10 @@ circular :: Opt BFProg ()
 circular = guard . (==0) =<< getBalance
 
 inLoop :: POpt BrainFuck -> POpt BrainFuck
-inLoop o = wrap $ \x -> do
+inLoop o = opt $ \x -> do
   (Loop b:xs) <- pure x
-  (:xs) . Loop <$> runOpt o b
+  Just r <- pure $ (:xs) . Loop <$> runOpt o b
+  return r
 
 -------------
 

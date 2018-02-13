@@ -1,48 +1,21 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Optimization where
 
 import Binary
+import Machine
 
-import Prelude hiding ((.), id)
 import Control.Arrow
 import Control.Monad
-import Control.Applicative
-import Control.Category
-import qualified Control.Monad.Fail as Fail
+
+import Control.Monad.State
+import Control.Monad.Trans.Maybe
 
 
-type Opt = Kleisli Maybe
+type Opt = Machine ()
 
-runOpt = runKleisli
-wrap   = Kleisli
-
-
-instance Functor (Opt a) where
-  fmap f o = wrap $ fmap f . runOpt o
-
-instance Applicative (Opt a) where
-  pure = wrap . const . Just
-  f <*> o = wrap $ liftA2 ap (runOpt f) (runOpt o)
-
-instance Monad (Opt a) where
-  o >>= f = wrap $ \x -> runOpt o x >>= flip runOpt x . f
-  fail = Fail.fail
-
-instance Fail.MonadFail (Opt a) where
-  fail _ = no
-
-instance Alternative (Opt a) where
-  empty = wrap $ const Nothing
-  a <|> b = wrap $ \x -> runOpt a x <|> runOpt b x
-
-instance MonadPlus (Opt a) where
-  mzero = no
-  mplus = (<|>)
-
-instance Binary Opt where
-  yes = id
-  no  = empty
-  (..>) = (>>>)
+runOpt m x = evalState (runMaybeT $ runKleisli m x) ()
+opt        = machine
 
 
 -- First of many, otherwise none

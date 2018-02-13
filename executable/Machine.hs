@@ -1,81 +1,52 @@
-{-# LANGUAGE MonadComprehensions, LambdaCase, TypeSynonymInstances, MultiParamTypeClasses, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, LambdaCase #-}
 module Machine where
 
-import Optimization hiding (get, gets, yes, no, try, (.>))
 import Binary
 
 import Control.Monad.Trans.Maybe
 import Control.Monad.State
-import Data.List.Zipper as Z
 import Control.Applicative
 import qualified Control.Monad.Fail as Fail
-
-type Tape = Zipper
-newtype Machine a b = Machine { unMachine :: MaybeT (State (Tape a)) b }
-                    deriving (Functor, Applicative, Monad, MonadPlus, Alternative)
-
-instance MonadState (Tape a) (Machine a) where
-  get   = Machine $ get
-  put   = Machine . put
-  state = Machine . state
-
-instance Binary Machine where
-  no = mzero
-  yes' = pure ()
-  a ~.> b = a >> b
+import Control.Arrow hiding (left, right)
 
 
--- Somehow the list zipper doesn't ship with these
-zLeft  = \case Zip l r -> l
-zRight = \case Zip l r -> r
-
--- Wrap the zipper in our monad
-start, end, pop, popr, left, right :: Machine a ()
-start = modify Z.start -- == greedy left
-end   = modify Z.end   -- == greedy right
-pop   = modify Z.pop
-popr  = Machine.right >> modify Z.pop
-
--- Move the tape left
-left = do
-  guard . not . null =<< gets zLeft
-  modify Z.left
-
--- Move the tape right
-right = do
-  guard . not . null =<< gets zRight
-  modify Z.right
-
--- Gets the cursor
-cursor :: Machine a a
-cursor = Machine . MaybeT $ gets Z.safeCursor
+type Machine s = Kleisli (MaybeT (State s))
 
 
+runMachine :: Machine s a b -> a -> s -> (Maybe b, s)
+runMachine k = runState . runMaybeT . runKleisli k
 
--- Run an optimization with the left tape
-optl :: Opt [a] b -> Machine a (Maybe b)
-optl o = runOpt o <$> gets zLeft
+runMachine' :: Machine s s b -> s -> (Maybe b, s)
+runMachine' m s = runState (runMaybeT $ runKleisli m s) s
 
--- Run an optimization with the right tape
-optr :: Opt [a] b -> Machine a (Maybe b)
-optr o = runOpt o <$> gets zRight
-
--- Run an optimization on the left tape
-optl' :: Opt [a] [a] -> Machine a ()
-optl' o = do
-  Just x <- optl o
-  modify $ \(Zip l r) -> Zip x r
-
--- Run an optimization on the right tape
-optr' :: Opt [a] [a] -> Machine a ()
-optr' o = do
-  Just x <- optr o
-  modify $ \(Zip l r) -> Zip l x
+machine = Kleisli
 
 
+instance Functor (Machine s a) where
+  fmap f m = machine $ fmap f . runKleisli m
 
-runMachine :: Machine a b -> Tape a -> (Maybe b, Tape a)
-runMachine = runState . runMaybeT . unMachine
+instance Applicative (Machine a b) where
+  pure = machine . const . pure
+  f <*> o = machine $ liftA2 ap (runKleisli f) (runKleisli o)
 
-runMachine' :: Machine a b -> [a] -> [a]
-runMachine' m = toList . snd . runMachine m . fromList
+instance Monad (Machine a b) where
+  o >>= f = machine $ \x -> runKleisli o x >>= flip runKleisli x . f
+  fail = Fail.fail
+
+instance Fail.MonadFail (Machine a b) where
+  fail _ = empty
+
+instance Alternative (Machine a b) where
+  empty = machine $ const empty
+  a <|> b = machine $ \x -> runKleisli a x <|> runKleisli b x
+
+instance MonadPlus (Machine a b) where
+  mzero = empty
+  mplus = (<|>)
+
+instance MonadState a (Machine a b) where
+  get   = machine $ const get
+  put   = machine . const . put
+  state = machine . const . state
+
+instance Binary (Machine a) b where

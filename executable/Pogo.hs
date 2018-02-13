@@ -5,10 +5,10 @@ import Debug.Trace
 
 {- This is a simplified version of the scan problem.
 
-  I am standing on a pogo stick at the surface of a circle with an integer circumference C.
-  An integer distance away from me D is a piece of candy.
-  My pogo stick can only jump in one direction, and only some specific integer length L.
-  If I were to pogo forever, would I ever land on the candy, and if so, how many jumps would it take?
+I am standing on a pogo stick at the surface of a circle with an integer circumference C.
+An integer distance away from me D is a piece of candy.
+My pogo stick can only jump in one direction, and only some specific integer length L.
+If I were to pogo forever, would I ever land on the candy, and if so, how many jumps would it take?
 
 Examples:
   (C=10, D=1, L=2) -> impossible
@@ -38,7 +38,7 @@ solvePogoBrute c d l
 getT c d l h = div (h*l-d) c
 getH c d l t = div (d+t*c) l
 
--- This is total, but still has a bad worst case runtime.
+-- Worst case: O(c)
 solvePogo c d l
   | l  < 0 = solvePogo c (c-d) (-l)
   | d  < 0 = solvePogo c (c+d) l
@@ -54,10 +54,10 @@ solvePogo c d l
         -- How much i overshot the edge by
         o = mod (l*z+l) c
 
-        -- Exhaustively search future overshots
+        -- Exhaustively search all future overshots
         os = [ (t, getH c d l t)
              | (t, x) <- zip [1..] $ takeWhile (/=0) [ mod (o*n) l | n <- [1..] ]
-             , mod (d-x) l == 0 ]
+             , trace (show (x,t)) $ mod (d-x) l == 0 ]
 
 pogo c d l = [ h | (_,_,_,h,_) <- solvePogo c d l ]
 
@@ -80,14 +80,20 @@ solvePogo' c d l
         -- How much i overshot the edge by
         o = mod (l*z+l) c
 
+        -- Only checks the first item in falling sequences of overshoots.
+        -- This still has a worst case performance of O(c), but a much better average case
+        -- (except that GHC is a beast, and it turns out this runs slower in practice,
+        -- despite doing less operations)
         seekDown t
           | x == d = Just t
           | d == x-n*cm = Just $ t + n
           | mod x cm == 0 = Nothing
-          | otherwise = trace (show (x,t,div x cm)) $ seekDown $ t + 1 + div x cm
+          | otherwise = trace (show (x,t)) $ seekDown $ t + 1 + div x cm
           where x = mod (o*t) l
                 n = div (x-d) cm
 
+        -- I'm not even sure what I am doing at this point.
+        -- I think it has the potential to become O(log n)
         seek2
           = [ (t, getH c d l t)
             | t <- [0..cnt-1]
@@ -96,7 +102,7 @@ solvePogo' c d l
           where cnt = l-o
                 s   = mod o (mod l o)
 
-seeksim c d l = [ (t, div t m, t-d-m*div (t-d) m, mod (s*9) l)
+seeksim c d l = [ (t, div t m, t-d-m*div (t-d) m, s)
                 | i <- [0..cnt-1]
                 , t <- pure $ o + mod (i*s) cnt
                 ]
@@ -104,6 +110,7 @@ seeksim c d l = [ (t, div t m, t-d-m*div (t-d) m, mod (s*9) l)
         o = mod (l*z+l) c
         cnt = l-o
         s = mod o (mod l o)
+-- , mod (s*7) l
 
 {-
   x = o + mod (i*s) cnt

@@ -5,7 +5,7 @@ import Fucktoid
 import Optimization
 import Optimizations.BrainFuck as B
 import Optimizations.Factor    as F
-import Machine
+import TapeMachine
 
 import Pogo
 
@@ -16,9 +16,9 @@ import Control.Applicative
 main :: IO ()
 main = do
   putStrLn ""
-  -- print $ showProg <$> lorem
-  -- putStrLn $ showProg ipsum
-  print $ solvePogo 12334351213333122 224 31234234
+  print $ showProg <$> lorem
+  putStrLn $ showProg ipsum
+  -- print $ solvePogo 12334351213333122 224 31234234
 
 abba :: BFProg
 abba = parse "+++++ +[>+++++ +++++ +<-]>[<]>-.+..-."
@@ -34,9 +34,9 @@ test = parse " +++++ > +++++ [-] < -- > +  Simple optimization \
 
 
 -- Pop pure ops from to right
-popPure :: Machine (Op BrainFuck) ()
+popPure :: TapeMachine (Op BrainFuck) () ()
 popPure
-  = greedy' $ do
+  = greedy $ do
       left
       guard . isPure =<< cursor
       popr
@@ -49,12 +49,12 @@ optimize = yes
         .> inLoop (jump $ greedy joinGroups)
 
 -- Optimization machine
-optimizer :: Machine (Op BrainFuck) ()
+optimizer :: TapeMachine (Op BrainFuck) () ()
 optimizer = do
-  try' $ end >> popPure >> start
-  try' . optr' $ B.optimize
+  try $ end >> popPure >> start
+  try . optr' $ B.optimize
               .> jump (greedy $ oneOf [joinGroups, unsafeClearCell, unsafeScan])
-  greedy' $
+  greedy $
     optr' (B.optimize .> inLoop (jump $ greedy joinGroups))
       <|> right
 
@@ -63,4 +63,4 @@ lorem :: Maybe BFProg
 lorem = runOpt Main.optimize test
 
 ipsum :: BFProg
-ipsum = runMachine' optimizer test
+ipsum = runTape' optimizer test
