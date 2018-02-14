@@ -4,8 +4,8 @@ module Fucktoid where
 import Binary
 import Optimization
 
-import Control.Lens
 import Control.Category ((>>>))
+import Control.Lens
 import Data.Function (fix)
 import Debug.Trace
 
@@ -13,8 +13,8 @@ import Debug.Trace
 data BrainFuck
 
 memSize :: Int
--- memSize = 30*1000
-memSize = 10
+memSize = 30*1000
+-- memSize = 10
 
 -- A fucktoid language is a language that can be converted to BrainFuck
 -- .. which is technically all turing complete languages because BrainFuck
@@ -33,6 +33,8 @@ instance Fucktoid BrainFuck where
     | In
     | Out
     | Loop BFProg
+    | Inf
+    deriving (Eq)
   put = pure
   get = [ (x, xs) | (x:xs) <- yes ]
 
@@ -63,15 +65,26 @@ parse = fst . parse'
 
 instance Fucktoid a => Show (Op a) where
   show = (put >>>) . concatMap $ \case
-    Add n   | n > 0 -> replicate n '+'
-            | n < 0 -> replicate (abs n) '-'
-            | otherwise -> "(+-)"
-    Move n  | n > 0 -> replicate n '>'
+    -- Add n   | n > 0 -> replicate n '+'
+    --         | n < 0 -> replicate (abs n) '-'
+    --         | otherwise -> "(+-)"
+    Add n | n == 1 -> "+"
+          | n == (-1) -> "-"
+          | n > 0 -> '+' : show n
+          | otherwise -> show n
+    -- Move n  | n > 0 -> replicate n '>'
+    --         | n < 0 -> replicate (abs n) '<'
+    --         | otherwise -> "(<>)"
+    Move n  | n > 1 -> '(' : show n ++ ">)"
+            | n < (-1) -> '(' : show (abs n) ++ "<)"
+            | n > 0 -> replicate n '>'
             | n < 0 -> replicate (abs n) '<'
             | otherwise -> "(<>)"
+
     In     -> ","
     Out    -> "."
-    Loop b -> '[' : foldr (\x acc -> show x ++ acc) "" b ++ "]"
+    Loop b -> '{' : show (balance $ Loop b) ++ "}" ++ '[' : foldr (\x acc -> show x ++ acc) "" b ++ "]"
+    Inf    -> "(Infinite loop)"
 
 showProg :: Fucktoid a => [Op a] -> String
 showProg = (>>= show)

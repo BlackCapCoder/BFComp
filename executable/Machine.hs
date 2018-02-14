@@ -3,11 +3,11 @@ module Machine where
 
 import Binary
 
-import Control.Monad.Trans.Maybe
-import Control.Monad.State
 import Control.Applicative
+import Control.Arrow
+import Control.Monad.State
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Fail as Fail
-import Control.Arrow hiding (left, right)
 
 
 type Machine s = Kleisli (MaybeT (State s))

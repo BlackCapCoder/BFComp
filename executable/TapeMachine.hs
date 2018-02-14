@@ -1,12 +1,13 @@
 {-# LANGUAGE MonadComprehensions, LambdaCase, TypeSynonymInstances #-}
 module TapeMachine where
 
-import Optimization hiding (get, gets)
 import Binary
 import Machine
+import Optimization
 
-import Control.Monad.Trans.Maybe (MaybeT (..))
+import Control.Arrow hiding (left, right)
 import Control.Monad.State
+import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.List.Zipper (Zipper (..), toList, fromList)
 import qualified Data.List.Zipper as Z
 
@@ -17,9 +18,12 @@ type TapeMachine s = Machine (Tape s)
 
 runTape = Machine.runMachine
 
-runTape' :: TapeMachine a () b -> [a] -> [a]
-runTape' m = toList . snd . runTape m () . fromList
+runTape' m a s
+  | (x,y) <- runTape m a $ fromList s
+  = (x, toList y)
 
+runTape'' :: TapeMachine a () b -> [a] -> [a]
+runTape'' m = snd . runTape' m ()
 
 -- Somehow the list zipper doesn't ship with these
 zLeft  = \case Zip l r -> l
@@ -66,3 +70,7 @@ optr' :: Opt [a] [a] -> TapeMachine a c ()
 optr' o = do
   Just x <- optr o
   modify $ \(Zip l r) -> Zip l x
+
+
+tapeEnd :: TapeMachine a b Bool
+tapeEnd = gets Z.endp

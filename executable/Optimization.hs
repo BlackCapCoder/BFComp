@@ -1,5 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, MonadComprehensions #-}
 module Optimization where
 
 import Binary
@@ -7,7 +6,6 @@ import Machine
 
 import Control.Arrow
 import Control.Monad
-
 import Control.Monad.State
 import Control.Monad.Trans.Maybe
 
@@ -25,3 +23,6 @@ oneOf = msum
 -- Ensure all succeeds
 allOf :: (Monad m, Foldable t) => t (m a) -> m ()
 allOf = sequence_
+
+vertifyOpt :: Eq a => Machine x a a -> Machine x a a
+vertifyOpt o = [ y | x <- yes, y <- o, x /= y ]

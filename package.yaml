@@ -29,6 +29,8 @@ executables:
     - mtl
     - containers
     - transformers
+    - monad-loops
+    - arithmoi
     ghc-options:
     - -rtsopts
     - -threaded

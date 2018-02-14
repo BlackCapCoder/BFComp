@@ -1,11 +1,11 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Binary where
 
-import Prelude hiding (id)
 import Control.Applicative
-import Data.Function (fix)
-import Control.Monad
 import Control.Category
+import Control.Monad
+import Data.Function (fix)
+import Prelude hiding (id)
 
 class (Category f, Alternative (f a)) => Binary f a where
   yes :: f a a
@@ -13,9 +13,6 @@ class (Category f, Alternative (f a)) => Binary f a where
 
   no :: f a b
   no = empty
-
-  (..>) :: f a b -> f b c -> f a c
-  (..>) = (>>>)
 
 
 try :: Binary f a => f a a -> f a a

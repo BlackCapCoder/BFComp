@@ -57,7 +57,7 @@ solvePogo c d l
         -- Exhaustively search all future overshots
         os = [ (t, getH c d l t)
              | (t, x) <- zip [1..] $ takeWhile (/=0) [ mod (o*n) l | n <- [1..] ]
-             , trace (show (x,t)) $ mod (d-x) l == 0 ]
+             , {- trace (show (x,t)) $ -} mod (d-x) l == 0 ]
 
 pogo c d l = [ h | (_,_,_,h,_) <- solvePogo c d l ]
 
