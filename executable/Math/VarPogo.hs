@@ -20,6 +20,19 @@ simVarPogo c d = takeWhile (/=d) . map (`mod`c) . scanl (+) 0 . cycle
 -- If H exist it must be smaller than this number
 varPogoMax c ls = c * length ls
 
+-- Number of turns to get back to the beginning
+varPogoMaxT c ls = max (s - 1) 0
+  where s = sum $ map (`mod`c) ls
+
+-- Brute number of turns, used to vertify function above
+simVarPogo' c d ls
+  | m <- varPogoMax c ls
+  , g <- take m $ map (`mod`c) . scanl (+) 0 $ cycle ls
+  = length $ filter id $ zipWith (>) g (tail g)
+
+tst c ls = (simVarPogo' c 0 ls, varPogoMaxT c ls)
+
+
 -- Solve by bruteforce
 varPogoBrute c d ls
   | m  <- varPogoMax c ls
@@ -51,27 +64,17 @@ F(H) ~= div (h*s) l + (mod (h*s) l)
 
 -}
 
-ls = [5,4,6,2,81,742,9999,3,78,1]
-c  = 30000
-d  = 1234
-s  = sum ls                            -- 10921
-l  = length ls                         -- 10
-x  = div f s                           -- 4225
-y  = f-s*x                             -- 9
-f  = travelLength h ls                 -- 46141234
-h  | Just x <- varPogoBrute c d ls = x -- 42252
-t  = div (f - d) c                     -- 1538
-
 varPogo c d ls
-  | (x:_) <- ns = ns -- x
+  | (x:_) <- ns = Just x
+  | otherwise   = Nothing
  where l = length ls
-       ns = [ (t, f, h, a+b)
-            | t <- [0..div c l]
+       s = sum ls
+       ns = [ (t, f, h)
+            | t <- [0..varPogoMaxT c ls]
             , f <- [d + t*c]
             , x <- [div f s]
             , y <- [f - s*x]
-            , n <- [length . takeWhile (<y) $ scanl (+) 0 ls]
-            , h <- [x*l + n]
-            , (a,b) <- [divMod (h*s) l]
-            -- , a+b == f -- I am not positive this is correct
+            , (ns, gs) <- [span (<y) $ scanl (+) 0 ls]
+            , head gs == y
+            , h <- [x*l + length ns]
             ]
