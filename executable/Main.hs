@@ -8,7 +8,7 @@ import Optimizations.BrainFuck as B
 import Optimizations.Factor    as F
 import TapeMachine
 
-import Pogo
+import Math.Pogo
 
 import Control.Monad
 import Control.Monad.Loops
@@ -19,6 +19,8 @@ import System.Environment (getArgs)
 import qualified Data.List.Zipper as Z
 import Data.Word (Word8)
 import Debug.Trace
+import Data.Array.Unboxed
+import Data.Array.Base (unsafeReplace)
 
 
 main :: IO ()
@@ -27,7 +29,7 @@ main = do
 
   prg <- fmap parse . readFile $
     if null args
-       then "tst/tst3.bf"
+       then "../tst/fib.bf"
        else head args
 
   let prg' = runTape'' Main.optimizer prg
@@ -35,7 +37,8 @@ main = do
   putStrLn ""
   -- putStrLn $ showProg prg
   putStrLn $ showProg prg'
-  void $ interpret prg'
+  -- x <- interpret prg
+  -- print x
 
   -- putStrLn ""
   -- putStrLn . showProg . runTape' optimizer $ prg
@@ -105,17 +108,16 @@ optimizer = do
     start >> initial
 
 
-interpret :: BFProg -> IO (Z.Zipper Word8)
+interpret :: BFProg -> IO (Int, Array Int Word8)
 interpret prg
-  | mem <- Z.fromList $ replicate memSize (0 :: Word8)
-  = fmap snd . flip runStateT mem $ forM_ prg f
+  | mem <- listArray (0, memSize-1) $ repeat 0
+  = fmap snd . flip runStateT (0, mem) $ forM_ prg f
   where f = \case
-          Move n | n > 0     -> replicateM_ n $ modify Z.right
-                 | otherwise -> replicateM_ (-n) $ modify Z.left
-          Add  n -> do c <- S.gets Z.cursor
-                       S.modify . Z.replace $ fromIntegral n+c
-          Out -> S.get >>= liftIO . putChar . toEnum . fromIntegral . Z.cursor
-          In  -> liftIO getChar >>= \x -> S.modify $ Z.replace (fromIntegral $ fromEnum x)
-          Loop b -> whileM_ ((/=0) <$> S.gets Z.cursor) $ forM_ b f
+          Move n -> modify $ \(i, a) -> (mod (i+n) memSize, a)
+          Add  n -> modify $ \(i, a) -> (i, unsafeReplace a [(i, (a!i)+fromIntegral n)])
+          Out -> S.get >>= liftIO . print . fromIntegral . fst
+          In  -> liftIO getChar >>= \x -> S.modify $
+            \(i,a) -> (i, unsafeReplace a [(i, fromIntegral $ fromEnum x)])
+          Loop b -> whileM_ ((/=0) <$> S.gets (\(i,a) -> a!i)) $ forM_ b f
           Inf -> error "Tried to interpret an infinite loop"
 

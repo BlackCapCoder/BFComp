@@ -5,7 +5,7 @@ import Fucktoid
 import Optimization
 import Binary
 
-import Pogo
+import Math.Pogo
 
 import Control.Category
 import Data.List

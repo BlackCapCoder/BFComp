@@ -1,5 +1,5 @@
 {-# LANGUAGE MonadComprehensions #-}
-module Pogo where
+module Math.Pogo where
 
 import Debug.Trace
 

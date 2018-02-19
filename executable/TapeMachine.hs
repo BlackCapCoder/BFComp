@@ -45,6 +45,13 @@ right = do
   guard . not . null =<< gets zRight
   modify Z.right
 
+tapeStart :: TapeMachine a b Bool
+tapeStart = gets Z.beginp
+
+tapeEnd :: TapeMachine a b Bool
+tapeEnd = gets Z.endp
+
+
 -- Gets the cursor
 cursor :: TapeMachine a b a
 cursor = machine . const . MaybeT $ gets Z.safeCursor
@@ -72,5 +79,3 @@ optr' o = do
   modify $ \(Zip l r) -> Zip l x
 
 
-tapeEnd :: TapeMachine a b Bool
-tapeEnd = gets Z.endp

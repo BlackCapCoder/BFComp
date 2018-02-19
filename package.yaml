@@ -31,6 +31,7 @@ executables:
     - transformers
     - monad-loops
     - arithmoi
+    - array
     ghc-options:
     - -rtsopts
     - -threaded
