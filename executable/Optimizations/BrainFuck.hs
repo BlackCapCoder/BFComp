@@ -1,4 +1,3 @@
-{-# LANGUAGE MonadComprehensions #-}
 module Optimizations.BrainFuck where
 
 import Language

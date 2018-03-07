@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Binary where
 
 import Control.Applicative

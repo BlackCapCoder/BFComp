@@ -1,4 +1,3 @@
-{-# LANGUAGE MonadComprehensions, TypeFamilies, MultiParamTypeClasses #-}
 module Optimizations.Factor where
 
 import Language

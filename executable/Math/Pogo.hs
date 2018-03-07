@@ -1,4 +1,3 @@
-{-# LANGUAGE MonadComprehensions #-}
 module Math.Pogo where
 
 import Debug.Trace

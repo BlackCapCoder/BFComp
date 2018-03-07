@@ -1,4 +1,4 @@
-{-# LANGUAGE MonadComprehensions, LambdaCase, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 import Language
 import BrainFuck
@@ -39,7 +39,6 @@ main = do
   -- x <- interpret prg
   -- print x
 
-  -- ""
   -- putStrLn . showProg . runTape' optimizer $ prg
   -- print $ solvePogo 12334351213333122 224 31234234
 

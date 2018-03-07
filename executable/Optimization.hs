@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, MonadComprehensions #-}
 module Optimization where
 
 import Binary

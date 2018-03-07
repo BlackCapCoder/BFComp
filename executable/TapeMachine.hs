@@ -1,4 +1,3 @@
-{-# LANGUAGE MonadComprehensions, LambdaCase, TypeSynonymInstances #-}
 module TapeMachine where
 
 import Binary

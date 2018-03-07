@@ -1,4 +1,3 @@
-{-# LANGUAGE MonadComprehensions, TypeFamilies, MultiParamTypeClasses #-}
 module Optimizations.C where
 
 import Language

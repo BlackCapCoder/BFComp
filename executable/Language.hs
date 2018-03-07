@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleInstances, MonadComprehensions #-}
 module Language
   ( Language (..)
   , Translatable (..)
