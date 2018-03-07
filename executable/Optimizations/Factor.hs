@@ -1,9 +1,8 @@
-{-# LANGUAGE MonadComprehensions, TypeFamilies #-}
+{-# LANGUAGE MonadComprehensions, TypeFamilies, MultiParamTypeClasses #-}
 module Optimizations.Factor where
 
-import Fucktoid
-import Optimization
-import Binary
+import Language
+import BrainFuck
 
 import Math.Pogo
 
@@ -19,7 +18,7 @@ import Debug.Trace
 
 data Factor
 
-instance Fucktoid Factor where
+instance Language Factor where
   data Op Factor
     = Group
       { ptr :: Int           -- Current position
@@ -29,30 +28,37 @@ instance Fucktoid Factor where
     | Scan Int
     | Balanced [Op Factor]
     | FInf
+    deriving (Show)
 
-  get = oneOf
-    [ [ (Group n mempty, xs) | (Move n:xs) <- id ]
-    , [ (Group 0 $ M.singleton 0 n, xs) | (Add n:xs) <- id ]
-    , [ (Clear, xs) | (Loop [Add n]:xs) <- id, odd n ]
-    , [ (Scan n, xs) | (Loop [Move n]:xs) <- id ]
-    , [ (Balanced b', xs) | (l@(Loop b):xs) <- id
-      , balance l == 0
-      , isPure l
-      , Just b' <- pure $ puts' b
-      ]
-    , [ (Balanced [], xs) | (Loop []:xs) <- id ]
+instance Translatable BrainFuck Factor where
+  transOp = oneOf
+    [ op [ Group n mempty | Move n <- yes ]
+    , op [ Group 0 $ M.singleton 0 n | Add n <- yes ]
+    , op [ Clear | Loop [Add n] <- yes, odd n ]
+    , op [ Scan n | Loop [Move n] <- yes ]
+    , op [ Balanced b' | l@(Loop b) <- yes
+         , balance l == 0
+         , isPure l
+         , b' <- exec trans b ]
+    , op [ Balanced [] | Loop [] <- yes ]
     ]
 
-  put Clear    = [Loop [Add (-1)]]
-  put (Scan n) = [Loop [Move n]]
-  put (Balanced b) = [Loop $ puts b]
-  put (Group p m)
-    | (i, xs) <- foldr (\(i, x) (ix, xs) ->
-                         (i, xs ++ (if i==ix then id else (Move (i-ix) :)) [Add x])
-                       ) (-p, []) . sortOn (negate . fst) $ M.toList m
-    = xs ++ if i==0 then [] else [ Move (-i) ]
-  put FInf = [Inf]
+instance Translatable Factor BrainFuck where
+  transOp = oneOf
+    [ op [ Loop [Add (-1)] | Clear <- yes ]
+    , op [ Loop [Move n] | (Scan n) <- yes ]
+    , op [ Loop x | (Balanced b) <- yes, x <- exec trans b ]
+    , op [ Inf | FInf <- yes ]
+    , [ (ys ++ if i==0 then [] else [ Move (-i) ], xs)
+      | (Group p m:xs) <- yes
+      , (i, ys) <- pure $ foldr (\(i, x) (ix, xs) ->
+                                   (i, xs ++ (if i==ix then id else (Move (i-ix) :)) [Add x])
+                                ) (-p, []) . sortOn (negate . fst) $ M.toList m
+      ]
+    ]
 
+transOpF :: Opt BFProg (Program Factor, BFProg)
+transOpF = transOp
 
 optimize = greedy $ oneOf
   [ joinGroups

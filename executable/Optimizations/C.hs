@@ -1,19 +1,18 @@
-{-# LANGUAGE MonadComprehensions, TypeFamilies #-}
+{-# LANGUAGE MonadComprehensions, TypeFamilies, MultiParamTypeClasses #-}
 module Optimizations.C where
 
-import Fucktoid
-import Optimization
-
-import Prelude hiding ((.), id)
-import Control.Category
+import Language
+import BrainFuck
 
 
 data C
 
-instance Fucktoid C where
+instance Language C where
   data Op C
-    = Memchr
+    = MemChr
 
-  put Memchr = [Loop [Move 1]]
-  get = [(Memchr, xs) | (Loop [Move 1]:xs) <- id]
+instance Translatable BrainFuck C where
+  transOp = [ ([MemChr], xs) | (Loop [Move 1]:xs)<-yes ]
 
+instance Translatable C BrainFuck where
+  transOp = [ ([Loop [Move 1]], xs) | (MemChr:xs)<-yes ]

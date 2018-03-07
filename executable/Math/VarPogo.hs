@@ -1,4 +1,6 @@
-module Math.VarPogo where
+module Math.VarPogo
+  ( varPogo
+  ) where
 
 {-
 

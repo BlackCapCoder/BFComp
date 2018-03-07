@@ -1,9 +1,8 @@
 {-# LANGUAGE MonadComprehensions #-}
 module Optimizations.BrainFuck where
 
-import Binary
-import Fucktoid
-import Optimization
+import Language
+import BrainFuck
 import TapeMachine
 
 import Prelude hiding ((.), id)
@@ -65,7 +64,6 @@ unsafePopInit = oneOf
   , [ xs | (Move _:xs) <- id ]
   ]
 
-
 optimize = do
   -- x <- id
   -- trace (show x) yes
@@ -80,5 +78,4 @@ optimize = do
     --     guard $ x /= t
     --     return $ t
     ]
-
 

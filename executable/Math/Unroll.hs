@@ -1,6 +1,6 @@
 module Math.Unroll where
 
-import Fucktoid
+import BrainFuck (memSize)
 
 {-
   Unrolls a flat, non-balanced loop. E.g:

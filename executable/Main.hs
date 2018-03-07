@@ -1,8 +1,7 @@
 {-# LANGUAGE MonadComprehensions, LambdaCase, FlexibleContexts #-}
 
-import Binary
-import Fucktoid
-import Optimization
+import Language
+import BrainFuck
 import Machine
 import Optimizations.BrainFuck as B
 import Optimizations.Factor    as F
@@ -29,7 +28,7 @@ main = do
 
   prg <- fmap parse . readFile $
     if null args
-       then "../tst/fib.bf"
+       then "../tst/tst.bf"
        else head args
 
   let prg' = runTape'' Main.optimizer prg
@@ -40,7 +39,7 @@ main = do
   -- x <- interpret prg
   -- print x
 
-  -- putStrLn ""
+  -- ""
   -- putStrLn . showProg . runTape' optimizer $ prg
   -- print $ solvePogo 12334351213333122 224 31234234
 

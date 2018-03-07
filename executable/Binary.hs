@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleContexts #-}
 module Binary where
 
 import Control.Applicative
@@ -24,7 +24,3 @@ a .> b = a >>> try b
 greedy :: Binary f a => f a a -> f a a
 greedy = fix $ ap (.>)
 
-{-# RULES
-"doubleGreedy" forall x. greedy (greedy x) = greedy x
-"doubleTry" forall x. try (try x) = try x
-  #-}
