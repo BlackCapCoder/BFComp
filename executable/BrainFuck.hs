@@ -12,15 +12,14 @@ import Data.Function (fix)
 data BrainFuck
 type BFProg = Program BrainFuck
 
-instance Language BrainFuck where
-  data Op BrainFuck
-    = Add  Int
-    | Move Int
-    | In
-    | Out
-    | Loop BFProg
-    | Inf
-    deriving (Eq)
+data instance Op BrainFuck
+  = Add  Int
+  | Move Int
+  | In
+  | Out
+  | Loop BFProg
+  | Inf
+  deriving (Eq)
 
 
 memSize :: Int
@@ -86,4 +85,3 @@ instance Show (Op BrainFuck) where
 showProg :: Translatable a BrainFuck => Program a -> String
 showProg p | Just xs <- runOpt trans p
            = show =<< (xs :: Program BrainFuck)
-

@@ -17,47 +17,45 @@ import Debug.Trace
 
 data Factor
 
-instance Language Factor where
-  data Op Factor
-    = Group
-      { ptr :: Int           -- Current position
-      , mem :: M.Map Int Int -- Memory relative to pointer
-      }
-    | Clear
-    | Scan Int
-    | Balanced [Op Factor]
-    | FInf
-    deriving (Show)
+data instance Op Factor
+  = Group
+    { ptr :: Int           -- Current position
+    , mem :: M.Map Int Int -- Memory relative to pointer
+    }
+  | Clear
+  | Scan Int
+  | Balanced [Op Factor]
+  | FInf
+  deriving (Show)
+
 
 instance Translatable BrainFuck Factor where
   transOp = oneOf
-    [ op [ Group n mempty | Move n <- yes ]
-    , op [ Group 0 $ M.singleton 0 n | Add n <- yes ]
-    , op [ Clear | Loop [Add n] <- yes, odd n ]
-    , op [ Scan n | Loop [Move n] <- yes ]
-    , op [ Balanced b' | l@(Loop b) <- yes
+    [ [ pure $ Group n mempty | Move n <- yes ]
+    , [ pure $ Group 0 $ M.singleton 0 n | Add n <- yes ]
+    , [ pure $ Clear | Loop [Add n] <- yes, odd n ]
+    , [ pure $ Scan n | Loop [Move n] <- yes ]
+    , [ pure $ Balanced b' | l@(Loop b) <- yes
          , balance l == 0
          , isPure l
          , b' <- exec trans b ]
-    , op [ Balanced [] | Loop [] <- yes ]
+    , [ pure $ Balanced [] | Loop [] <- yes ]
     ]
 
 instance Translatable Factor BrainFuck where
   transOp = oneOf
-    [ op [ Loop [Add (-1)] | Clear <- yes ]
-    , op [ Loop [Move n] | (Scan n) <- yes ]
-    , op [ Loop x | (Balanced b) <- yes, x <- exec trans b ]
-    , op [ Inf | FInf <- yes ]
-    , [ (ys ++ if i==0 then [] else [ Move (-i) ], xs)
-      | (Group p m:xs) <- yes
+    [ [ pure $ Loop [Add (-1)] | Clear <- yes ]
+    , [ pure $ Loop [Move n] | (Scan n) <- yes ]
+    , [ pure $ Loop x | (Balanced b) <- yes, x <- exec trans b ]
+    , [ pure $ Inf | FInf <- yes ]
+    , [ ys ++ if i==0 then [] else [ Move (-i) ]
+      | (Group p m) <- yes
       , (i, ys) <- pure $ foldr (\(i, x) (ix, xs) ->
                                    (i, xs ++ (if i==ix then id else (Move (i-ix) :)) [Add x])
                                 ) (-p, []) . sortOn (negate . fst) $ M.toList m
       ]
     ]
 
-transOpF :: Opt BFProg (Program Factor, BFProg)
-transOpF = transOp
 
 optimize = greedy $ oneOf
   [ joinGroups
@@ -88,6 +86,7 @@ unsafeNopBalanced
   =  [ x:xs | (x@(Group _ m):Balanced _:xs) <- id
      , Nothing <- pure $ M.lookup 0 m ]
  <|> [ [FInf] | (x@(Group _ m):Balanced []:_) <- id ]
+
 
 -- WARNING: This may only be used when the memory is known
 unsafeUnrollBalanced :: POpt Factor

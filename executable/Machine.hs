@@ -39,9 +39,9 @@ instance Alternative (Machine a b) where
   empty = machine $ const empty
   a <|> b = machine $ \x -> runKleisli a x <|> runKleisli b x
 
-instance MonadPlus (Machine a b) where
-  mzero = empty
-  mplus = (<|>)
+instance Monoid (Machine a b c) where
+  mempty = empty
+  mappend = (<|>)
 
 instance MonadState a (Machine a b) where
   get   = machine $ const get
